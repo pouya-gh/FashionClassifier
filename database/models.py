@@ -1,10 +1,18 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
 from db import Base
+import enum
+
+
 
 class User(Base):
     __tablename__ = 'users'
+
+    class RoleEnum(enum.Enum):
+        normal = "normal"
+        verified = "verified"
+        admin = "admin"
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)
@@ -12,6 +20,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     is_active = Column(Integer, default=1)
+    role = Column(Enum(RoleEnum), default=RoleEnum.normal, nullable=False)
 
     api_secrets = relationship("APISecret", backref="owner", cascade="all, delete-orphan")
 
