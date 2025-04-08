@@ -5,8 +5,9 @@ from fastapi import Security, HTTPException, status, Depends
 from database.db import get_db
 from database.models import APIKey
 
-app = FastAPI()
+from utils.auth import get_api_key, get_current_user
 
+app = FastAPI()
 
 @app.get("/")
 async def root():
