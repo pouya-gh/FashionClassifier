@@ -22,13 +22,12 @@ async def get_api_key(api_key_header: str = Security(api_key_header), db: Sessio
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API Key"
         )
-    return api_key_header
+    return api_key
 
-async def get_current_user(api_key: str = Security(get_api_key), db: Session = Depends(get_db)):
+async def get_current_user(api_key: APIKey = Security(get_api_key), db: Session = Depends(get_db)):
     # Fetch user data based on the API key from the database
-    api_key_entry = db.query(APIKey).filter(APIKey.key == api_key).first()
-    if api_key_entry and api_key_entry.user:
-        return api_key_entry.user
+    if api_key.user:
+        return api_key.user
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail="User not found"
