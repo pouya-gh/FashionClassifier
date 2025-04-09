@@ -48,6 +48,8 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, unique=True, nullable=False)
-    api_key = Column(Integer, ForeignKey("api_keys.id"), nullable=False)
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False)
     state = Column(Enum(StateEnum), default=StateEnum.processing, nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    api_key = relationship("APIKey", back_populates="tasks")
