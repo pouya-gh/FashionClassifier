@@ -32,7 +32,7 @@ class APIKey(Base):
     key = Column(String, unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     is_active = Column(Integer, default=1)
-    expiration_date = Column(String, nullable=True)
+    expiration_date = Column(DateTime, nullable=True)
 
     owner = relationship("User", back_populates="api_secrets")
     tasks = relationship("Task", backref="api_key", cascade="all, delete-orphan")
