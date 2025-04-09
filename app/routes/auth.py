@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from utils.auth import get_api_key, get_current_user
+from ..utils.auth import get_api_key, get_current_user
 
 import secrets
 

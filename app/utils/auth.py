@@ -1,8 +1,8 @@
 from fastapi import Security, HTTPException, status, Depends
 from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
-from database.db import get_db
-from database.models import APIKey
+from ..database.db import get_db
+from ..database.models import APIKey
 
 
 
