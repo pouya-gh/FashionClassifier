@@ -1,6 +1,9 @@
 from fastapi import Security, HTTPException, status, Depends
 from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
+
+import datetime
+
 from ..database.db import get_db
 from ..database.models import APIKey
 
@@ -21,6 +24,12 @@ async def get_api_key(api_key_header: str = Security(api_key_header), db: Sessio
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API Key"
+        )
+    
+    if api_key.expiration_date and api_key.expiration_date > datetime.datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API Key has expired!"
         )
     return api_key
 
