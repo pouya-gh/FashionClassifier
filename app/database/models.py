@@ -48,8 +48,10 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, unique=True, nullable=False)
-    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False)
-    state = Column(Enum(StateEnum), default=StateEnum.processing, nullable=False)
+    api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False, index=True)
+    state = Column(Enum(StateEnum), default=StateEnum.processing, nullable=False, index=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
+    result = Column(Integer, default=-1)
 
     api_key = relationship("APIKey", back_populates="tasks")
