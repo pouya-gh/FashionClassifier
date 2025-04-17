@@ -7,7 +7,11 @@ from .database.models import APIKey
 
 from .utils.auth import get_api_key, get_current_user
 
+from .routes import classify
+
 app = FastAPI()
+app.include_router(classify.router)
+
 
 @app.get("/")
 async def root():
@@ -21,5 +25,4 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000, help="Port to bind the server to")
     args = parser.parse_args()
     import uvicorn
-    from sqlalchemy.orm import Session
     uvicorn.run(app, host=args.host, port=args.port)
