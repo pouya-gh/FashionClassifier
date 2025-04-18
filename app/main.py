@@ -2,15 +2,18 @@ from fastapi import FastAPI
 from fastapi.security import APIKeyHeader
 from fastapi import Security, HTTPException, status, Depends
 
-from .database.db import get_db
+from .database.db import get_db, Base, engine
 from .database.models import APIKey
 
 from .utils.auth import get_api_key, get_current_user
 
-from .routes import classify
+from .routes import classify, auth
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.include_router(classify.router)
+app.include_router(auth.router)
 
 
 @app.get("/")
