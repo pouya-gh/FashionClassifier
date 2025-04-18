@@ -34,4 +34,4 @@ def classify_image(image_path: str) -> int:
         pred = classifier_model(transform(img).unsqueeze(0))
         pred_index = torch.softmax(pred, 1).argmax()
 
-    return pred_index
+    return pred_index.item()
