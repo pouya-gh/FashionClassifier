@@ -13,7 +13,6 @@ from ..database.db import get_db
 from ..database.models import APIKey, User
 
 
-
 API_KEY_NAME = "X-API-Key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -130,3 +129,9 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+def generate_api_key():
+    """
+    Returns a newly generated token for api keys.
+    """
+    return secrets.token_hex(32)
