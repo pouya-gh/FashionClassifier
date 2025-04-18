@@ -44,3 +44,6 @@ logs/
 
 # Dependencies
 node_modules/
+
+
+sql_app.db
