@@ -12,7 +12,10 @@ from ..database.models import APIKey, Task
 from ..database.db import get_db
 from ..utils.auth import get_api_key
 
-from ..utils.classifier import classify_image
+from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
+
+import os
+from pathlib import Path
 
 
 router = APIRouter()
@@ -20,10 +23,14 @@ router = APIRouter()
 # Replace this with your actual API key
 VALID_API_KEY = "your_secret_api_key"
 
-def start_task(file_name: str, task_id: int):
-    print(f"Processing file in the background: {file_name}")
-    result = classify_image(file_name)
-    print(f"Classification arg: {result}")
+def start_task(task: Task, db: Session):
+    print(f"Processing file in the background: {task.filename}")
+    result = classify_image(task.filename)
+    task_db = db.query(Task).filter(Task.id==task.id)
+    task_db.update({"result": result, "state": Task.StateEnum.done})
+    db.commit()
+    print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
+    os.remove(task.filename)
 
 @router.post("/classify")
 async def classify(
@@ -39,11 +46,14 @@ async def classify(
             detail="File size exceeds 512 KB limit"
         )
     
-    task_instance = Task(api_key_id=api_key.id, filename=file_name)
-    # Save the file or process it as needed
-    file_name = file.filename
+    # file_path = Path("temp_file") / api_key.owner.username
+    # file_path /= file.filename
+    file_path = file.filename
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+    task_instance = Task(api_key_id=api_key.id, filename=file_path)
     db.add(task_instance)
     db.commit()
     db.refresh(task_instance)
-    background_tasks.add_task(start_task, file_name, api_key.key)
+    background_tasks.add_task(start_task, task_instance, db)
     return {"message": "Background task started"}
