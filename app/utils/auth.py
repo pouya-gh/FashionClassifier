@@ -3,7 +3,6 @@ from fastapi.security import APIKeyHeader, OAuth2PasswordBearer, OAuth2PasswordR
 from sqlalchemy.orm import Session
 from pydantic import ValidationError, BaseModel
 
-import datetime
 from datetime import timedelta, datetime, timezone
 import secrets
 import jwt
@@ -22,7 +21,7 @@ SECRET_KEY = "TST"
 
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-async def get_api_key(api_key_header: str = Security(api_key_header), db: Session = Depends(get_db)):
+async def get_api_key(api_key_header: str, db: Session = Depends(get_db)):
     if api_key_header is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -35,7 +34,7 @@ async def get_api_key(api_key_header: str = Security(api_key_header), db: Sessio
             detail="Invalid API Key"
         )
     
-    if api_key.expiration_date and api_key.expiration_date > datetime.datetime.now():
+    if api_key.expiration_date and api_key.expiration_date < datetime.now():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="API Key has expired!"
