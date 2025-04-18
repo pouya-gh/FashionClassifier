@@ -19,7 +19,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
-    is_active = Column(Integer, default=1)
+    is_active = Column(Boolean, default=True)
     role = Column(Enum(RoleEnum), default=RoleEnum.normal, nullable=False)
 
     api_keys = relationship("APIKey", backref="owner", cascade="all, delete-orphan")
