@@ -20,7 +20,8 @@ SECRET_KEY = "TST"
 
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
-async def get_api_key(api_key_header: str, db: Session = Depends(get_db)):
+async def get_api_key(api_key_header: str = Depends(api_key_header),
+                      db: Session = Depends(get_db)):
     if api_key_header is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -40,7 +41,7 @@ async def get_api_key(api_key_header: str, db: Session = Depends(get_db)):
         )
     return api_key
 
-async def get_current_user_by_api_key(api_key: APIKey = Security(get_api_key), db: Session = Depends(get_db)):
+async def get_current_user_by_api_key(api_key: APIKey = Security(get_api_key)):
     # Fetch user data based on the API key from the database
     if api_key.user:
         return api_key.user
@@ -78,7 +79,8 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict,
+                        expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
