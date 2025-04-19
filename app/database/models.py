@@ -23,6 +23,7 @@ class User(Base):
     role = Column(Enum(RoleEnum), default=RoleEnum.normal, nullable=False)
 
     api_keys = relationship("APIKey", backref="owner", cascade="all, delete-orphan")
+    tasks = relationship("Task", backref="user", cascade="all, delete-orphan")
 
 
 class APIKey(Base):
@@ -48,6 +49,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     api_key_id = Column(Integer, ForeignKey("api_keys.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     state = Column(Enum(StateEnum), default=StateEnum.processing, nullable=False, index=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), server_onupdate=func.now(), nullable=False)
