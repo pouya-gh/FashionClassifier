@@ -16,12 +16,9 @@ from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
 
 import os
 from pathlib import Path
-
+import uuid
 
 router = APIRouter()
-
-# Replace this with your actual API key
-VALID_API_KEY = "your_secret_api_key"
 
 def start_task(task: Task, db: Session):
     print(f"Processing file in the background: {task.filename}")
@@ -46,12 +43,15 @@ async def classify(
             detail="File size exceeds 512 KB limit"
         )
     
-    # file_path = Path("temp_file") / api_key.owner.username
-    # file_path /= file.filename
-    file_path = file.filename
+    file_path = Path("temp_files") / api_key.owner.username
+
+    os.makedirs(file_path, exist_ok=True)
+    
+    file_path /= str(uuid.uuid1())
     with open(file_path, "wb") as f:
         f.write(file.file.read())
-    task_instance = Task(api_key_id=api_key.id, filename=file_path)
+
+    task_instance = Task(user_id=api_key.owner.id, api_key_id=api_key.id, filename=str(file_path))
     db.add(task_instance)
     db.commit()
     db.refresh(task_instance)
