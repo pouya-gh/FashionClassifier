@@ -58,8 +58,8 @@ def login_for_access_token(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     scopes = []
-    # if user.is_superuser:
-    #     scopes = ["super"]
+    if user.role == User.RoleEnum.admin:
+        scopes = ["admin"]
     access_token = create_access_token(
         data={"sub": user.username, "scopes": scopes},
         expires_delta=access_token_expires
