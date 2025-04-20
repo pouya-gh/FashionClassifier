@@ -56,4 +56,4 @@ async def classify(
     db.commit()
     db.refresh(task_instance)
     background_tasks.add_task(start_task, task_instance, db)
-    return {"message": "Background task started"}
+    return {"message": f"Request queued with id {task_instance.id}! Check your tasks for the result."}
