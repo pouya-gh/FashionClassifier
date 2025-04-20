@@ -18,3 +18,8 @@ class TaskInline(BaseModel):
     id: int
     state: str
     result: int
+
+class TaskInlineAdmin(TaskInline):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
