@@ -14,9 +14,11 @@ from ..utils.auth import (get_api_key,
 from ..database.db import get_db
 from ..database.models import User, APIKey
 
-from typing import Annotated, Union
+from ..data_models import user as user_dm
+from ..data_models import apikey as apikey_dm
+
+from typing import Annotated, List
 from datetime import timedelta, datetime
-import secrets
 
 router = APIRouter()
 
@@ -24,7 +26,7 @@ router = APIRouter()
 async def status():
     return {"message": "Auth router is working!"}
 
-@router.post("/users/new")
+@router.post("/users/new", response_model=user_dm.User)
 async def user_signup(username: str, password: str, email: str, db: Annotated[Session, Depends(get_db)]):
     username_check = db.query(User).filter(User.username == username or User.email == email).first()
     if username_check:
@@ -64,14 +66,14 @@ def login_for_access_token(
         )
     return {"access_token": access_token, "token_type":"bearer"}
 
-@router.get("/users/me/", tags=["users"])
+@router.get("/users/me/", response_model=user_dm.User, tags=["users"])
 def get_current_logged_in_user(
         current_user: Annotated[User, Depends(get_current_active_user)]
     ):
 
     return current_user
 
-@router.post("/api-keys/new")
+@router.post("/api-keys/new", response_model=apikey_dm.APIKey)
 def get_new_api_key(current_user: Annotated[User, Depends(get_current_user)],
                     db: Annotated[Session, Depends(get_db)]):
     #TODO: also check for api keys' expiry.  
@@ -90,7 +92,7 @@ def get_new_api_key(current_user: Annotated[User, Depends(get_current_user)],
     db.refresh(new_key)
     return new_key
 
-@router.get("/my-api-keys")
+@router.get("/my-api-keys", response_model=List[apikey_dm.APIKey])
 def get_current_user_api_keys(current_user: Annotated[User, Depends(get_current_user)],
                     db: Annotated[Session, Depends(get_db)],
                     active_only: bool = False):
