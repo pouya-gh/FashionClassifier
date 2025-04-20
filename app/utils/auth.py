@@ -15,10 +15,18 @@ from ..database.models import APIKey, User
 
 API_KEY_NAME = "X-API-Key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 600
 SECRET_KEY = "TST"
 
+class TokenData(BaseModel):
+    username: str | None = None
+    scopes: list[str] = []
+
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl='token',
+    scopes={"super": "permission to perform administrator action"},)
 
 async def get_api_key(api_key_header: str = Depends(api_key_header),
                       db: Session = Depends(get_db)):
@@ -52,14 +60,6 @@ async def get_current_user_by_api_key(api_key: APIKey = Security(get_api_key)):
 
 # Add this dependency to any route that needs API Key protection
 # Example: @app.get("/protected", dependencies=[Depends(get_api_key)])
-
-class TokenData(BaseModel):
-    username: str | None = None
-    scopes: list[str] = []
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl='token',
-    scopes={"super": "permission to perform administrator action"},)
 
 def hash_password(password):
     password_as_bytes = bytes(password, "utf-8")
