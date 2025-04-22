@@ -58,7 +58,7 @@ async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
         ]
 
         if len(request_counts_by_api_key[client_api_key]) >= RATE_LIMIT:
-            raise HTTPException(status_code=429, detail="Too Many Requests by this api key")
+            raise HTTPException(status_code=429, detail="Too Many Requests by your api key")
 
     # Add current request timestamp
     request_counts_by_api_key.setdefault(client_api_key, []).append(current_time)
@@ -86,9 +86,13 @@ async def classify(
     
     if file.size > 512 * 1024:  # 512 KB
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=413,
             detail="File size exceeds 512 KB limit"
         )
+    
+    number_of_running_tasks = db.query(Task).filter(Task.state == Task.StateEnum.processing).count()
+    if number_of_running_tasks > 0:
+        raise HTTPException(503, "Task queue is full. Try another time.")
     
     file_path = Path("temp_files") / api_key.owner.username
 
