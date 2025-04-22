@@ -5,7 +5,8 @@ from fastapi import (APIRouter,
                      File,
                      status,
                      Security,
-                     Depends)
+                     Depends,
+                     Request)
 from sqlalchemy.orm import Session
 
 from ..database.models import APIKey, Task
@@ -17,8 +18,54 @@ from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
 import os
 from pathlib import Path
 import uuid
+from time import time
+
+
+request_counts_by_ip = {}
+request_counts_by_api_key = {}
+RATE_LIMIT = 1 # Max 1 request
+TIME_WINDOW = 10  # Per 10 seconds
+
+
+async def ip_rate_limiter(request: Request):
+    client_ip = request.client.host
+    current_time = time()
+
+    if client_ip in request_counts_by_ip:
+        request_times = request_counts_by_ip[client_ip]
+
+        # Remove outdated requests outside the time window
+        request_counts_by_ip[client_ip] = [
+            timestamp for timestamp in request_times if current_time - timestamp < TIME_WINDOW
+        ]
+
+        if len(request_counts_by_ip[client_ip]) >= RATE_LIMIT:
+            raise HTTPException(status_code=429, detail="Too Many Requests from your ip")
+
+    # Add current request timestamp
+    request_counts_by_ip.setdefault(client_ip, []).append(current_time)
+
+async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
+    client_api_key = api_key.key
+    current_time = time()
+
+    if client_api_key in request_counts_by_api_key:
+        request_times = request_counts_by_api_key[client_api_key]
+
+        # Remove outdated requests outside the time window
+        request_counts_by_api_key[client_api_key] = [
+            timestamp for timestamp in request_times if current_time - timestamp < TIME_WINDOW
+        ]
+
+        if len(request_counts_by_api_key[client_api_key]) >= RATE_LIMIT:
+            raise HTTPException(status_code=429, detail="Too Many Requests by this api key")
+
+    # Add current request timestamp
+    request_counts_by_api_key.setdefault(client_api_key, []).append(current_time)
+
 
 router = APIRouter()
+
 
 def start_task(task: Task, db: Session):
     print(f"Processing file in the background: {task.filename}")
@@ -29,7 +76,7 @@ def start_task(task: Task, db: Session):
     print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
     os.remove(task.filename)
 
-@router.post("/classify")
+@router.post("/classify", dependencies=[Depends(ip_rate_limiter), Depends(api_key_rate_limiter)])
 async def classify(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
