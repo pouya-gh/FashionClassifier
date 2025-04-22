@@ -26,7 +26,7 @@ api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl='token',
-    scopes={"super": "permission to perform administrator action"},)
+    scopes={"admin": "permission to perform administrator action"},)
 
 async def get_api_key(api_key_header: str = Depends(api_key_header),
                       db: Session = Depends(get_db)):
@@ -126,13 +126,13 @@ def get_current_user(
     return user
 
 def get_current_admin_user(
-        current_user: Annotated[User, Depends(get_current_user, scopes=["admin"])]
+        current_user: Annotated[User, Security(get_current_user, scopes=["admin"])]
         ):
     
     return current_user
 
 def get_current_active_user(
-        current_user: Annotated[User, Depends(get_current_user)]
+        current_user: Annotated[User, Security(get_current_user)]
         ):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
