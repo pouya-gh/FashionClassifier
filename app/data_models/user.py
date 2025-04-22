@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from ..database.models import User
+from ..database.models import User as UserModel
 
 
 class User(BaseModel):
@@ -10,4 +10,13 @@ class User(BaseModel):
     email: str
     fullname: str | None = None
     is_active: bool
-    role: User.RoleEnum
+    role: UserModel.RoleEnum
+
+class UserUpdate(User):
+    model_config = ConfigDict(from_attributes=True)
+
+    username: str | None = None
+    email: str | None = None
+    fullname: str | None = None
+    is_active: bool | None = None
+    role: UserModel.RoleEnum | None = None
