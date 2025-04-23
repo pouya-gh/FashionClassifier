@@ -8,15 +8,13 @@ class User(BaseModel):
     id: int
     username: str
     email: str
-    fullname: str | None = None
+    full_name: str | None = None
     is_active: bool
     role: UserModel.RoleEnum
 
-class UserUpdate(User):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserUpdate(BaseModel):
     username: str | None = None
     email: str | None = None
-    fullname: str | None = None
+    full_name: str | None = None
     is_active: bool | None = None
     role: UserModel.RoleEnum | None = None
