@@ -14,12 +14,16 @@ async def get_apikeys(
     skip: int = 0, 
     limit: int = 10, 
     is_active: bool = None,
+    owner_id: int = None,
     db=Depends(get_db)
 ):
     query = db.query(APIKey)
     
     if is_active is not None:
         query = query.filter(APIKey.is_active == is_active)
+    
+    if owner_id is not None:
+        query = query.filter(APIKey.owner_id == owner_id)
     
     apikeys = query.offset(skip).limit(limit).all()
     if not apikeys:
