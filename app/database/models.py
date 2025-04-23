@@ -29,7 +29,9 @@ class User(Base):
 class APIKey(Base):
     __tablename__ = 'api_keys'
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True) # this is not redundant. this is used for admin api requests. 
+                                                       # otherwise, clients would need to send the whole key as a get
+                                                       # argument in every request which would not the most secure design choice.
     key = Column(String, unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     is_active = Column(Boolean, default=True)
