@@ -17,3 +17,8 @@ class APIKeyUpdate(BaseModel):
     key: str | None = None
     is_active: bool | None = None
     expiration_date: datetime | None = None
+
+class APIKeyCreate(BaseModel):
+    owner_id: int
+    is_active: bool = True
+    expiration_date: datetime

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 
 from app.database.models import User
 from app.database.db import get_db
 from app.data_models import user as user_dm
-from app.utils.auth import get_current_admin_user
+from app.utils.auth import get_current_admin_user, hash_password
 
 router = APIRouter(prefix="/admin",
                    tags=["admin", "users"],
@@ -15,7 +16,7 @@ async def get_users(
     limit: int = 10, 
     role: User.RoleEnum = None, 
     is_active: bool = None,
-    db=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     query = db.query(User)
     
@@ -29,10 +30,24 @@ async def get_users(
         raise HTTPException(status_code=404, detail="No users found")
     return users
 
+@router.post("/users/new", response_model=user_dm.User)
+async def create_user(user_data: user_dm.UserCreateAdmin,
+                      db: Session = Depends(get_db)):
+    user_data_dict = user_data.model_dump(exclude_none=True)
+    user_data_dict["hashed_password"] = hash_password(user_data_dict["password"])
+    del user_data_dict["password"]
+
+    user_instance = User(**user_data_dict)
+    db.add(user_instance)
+    db.commit()
+    db.refresh(user_instance)
+
+    return user_instance
+
 @router.get("/users/{user_id}", response_model=user_dm.User)
 async def get_user(
     user_id: int, 
-    db=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -42,8 +57,8 @@ async def get_user(
 @router.patch("/users/{user_id}")
 async def update_user(
     user_id: int,
-    user_update: user_dm.UserUpdate,
-    db=Depends(get_db)
+    user_update: user_dm.UserUpdateAdmin,
+    db: Session = Depends(get_db)
 ):
     update_data = user_update.model_dump(exclude_none=True)
     result = db.query(User).filter(User.id == user_id).update(update_data)
@@ -56,7 +71,7 @@ async def update_user(
 @router.delete("/users/{user_id}", status_code=204)
 async def delete_user(
     user_id: int,
-    db=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

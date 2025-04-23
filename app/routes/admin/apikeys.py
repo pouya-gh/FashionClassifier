@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 
 from app.database.models import APIKey
 from app.database.db import get_db
 from app.data_models import apikey as apikey_dm
-from app.utils.auth import get_current_admin_user
+from app.utils.auth import get_current_admin_user, generate_api_key
 
 router = APIRouter(prefix="/admin",
                    tags=["admin", "apikeys"],
@@ -29,6 +30,21 @@ async def get_apikeys(
     if not apikeys:
         raise HTTPException(status_code=404, detail="No API keys found")
     return apikeys
+
+@router.post("/apikeys/new", response_model=apikey_dm.APIKeyAdmin)
+async def create_apikey(
+    apikey_data: apikey_dm.APIKeyCreate,
+    db: Session = Depends(get_db)
+):
+    apikey_data_dict = apikey_data.model_dump(exclude_none=True)
+    apikey_data_dict["key"] = generate_api_key()
+
+    apikey_instance = APIKey(**apikey_data_dict)
+    db.add(apikey_instance)
+    db.commit()
+    db.refresh(apikey_instance)
+
+    return apikey_instance
 
 @router.get("/apikeys/{apikey_id}", response_model=apikey_dm.APIKeyAdmin)
 async def get_apikey(
