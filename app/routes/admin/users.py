@@ -39,7 +39,7 @@ async def get_user(
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.patch("/users/{user_id}", response_model=user_dm.User)
+@router.patch("/users/{user_id}")
 async def update_user(
     user_id: int,
     user_update: user_dm.UserUpdate,
