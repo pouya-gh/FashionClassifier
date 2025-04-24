@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/tasks", response_model=List[task_dm.TaskInline])
 async def get_user_tasks(
-    api_key: Optional[str] = Query(None, description="Filter by API key"),
+    api_key_id: Optional[int] = Query(None, description="Filter by API key ID"),
     state: Optional[Task.StateEnum] = Query(None, description="Filter by task state"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -19,18 +19,18 @@ async def get_user_tasks(
     """
     Get the list of tasks for the current user, optionally filtered by API key and state.
     """
-    db_api_key = None
-    if api_key:
-        db_api_key = db.query(APIKey).filter(APIKey.key == api_key, APIKey.owner_id == current_user.id).first()
-        if not db_api_key:
-            raise HTTPException(
-                status_code=404,
-                detail="Api key not found. It either does not exist or it is not yours."
-            )
+    # db_api_key = None
+    # if api_key:
+    #     db_api_key = db.query(APIKey).filter(APIKey.key == api_key, APIKey.owner_id == current_user.id).first()
+    #     if not db_api_key:
+    #         raise HTTPException(
+    #             status_code=404,
+    #             detail="Api key not found. It either does not exist or it is not yours."
+    #         )
 
-    tasks = db.query(Task)
-    if api_key:
-        tasks = tasks.filter(Task.api_key_id == db_api_key.id)
+    tasks = db.query(Task).filter(Task.user_id==current_user.id)
+    if api_key_id:
+        tasks = tasks.filter(Task.api_key_id == api_key_id)
     
     if state:
         tasks = tasks.filter(Task.state == state)
