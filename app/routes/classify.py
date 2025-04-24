@@ -28,6 +28,9 @@ TIME_WINDOW = 10  # Per 10 seconds
 
 
 async def ip_rate_limiter(request: Request):
+    if os.getenv("ENVIRONMENT", default="dev") == "test":
+        return
+
     client_ip = request.client.host
     current_time = time()
 
@@ -46,6 +49,9 @@ async def ip_rate_limiter(request: Request):
     request_counts_by_ip.setdefault(client_ip, []).append(current_time)
 
 async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
+    if os.getenv("ENVIRONMENT", default="dev") == "test":
+        return
+    
     client_api_key = api_key.key
     current_time = time()
 
