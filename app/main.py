@@ -9,10 +9,10 @@ from .database.models import APIKey
 
 from .utils.auth import get_api_key, get_current_user
 
-from .routes import classify, auth, tasks
-from .routes.admin import tasks as admin_tasks
-from .routes.admin import users as admin_users
-from .routes.admin import apikeys as admin_apikeys
+from .routes import classify, auth, tasks, apikeys
+from .routes.admin import (tasks as admin_tasks,
+                           users as admin_users,
+                           apikeys as admin_apikeys)
 
 Base.metadata.create_all(bind=engine)
 
@@ -36,6 +36,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(classify.router)
 app.include_router(auth.router)
 app.include_router(tasks.router)
+app.include_router(apikeys.router)
 app.include_router(admin_tasks.router)
 app.include_router(admin_users.router)
 app.include_router(admin_apikeys.router)

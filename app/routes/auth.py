@@ -26,7 +26,7 @@ router = APIRouter()
 async def status():
     return {"message": "Auth router is working!"}
 
-@router.post("/users/new", response_model=user_dm.User)
+@router.post("/signup", response_model=user_dm.User)
 async def user_signup(username: str, password: str, email: str, db: Annotated[Session, Depends(get_db)]):
     username_check = db.query(User).filter(User.username == username or User.email == email).first()
     if username_check:
@@ -72,32 +72,3 @@ def get_current_logged_in_user(
     ):
 
     return current_user
-
-@router.post("/api-keys/new", response_model=apikey_dm.APIKey)
-def get_new_api_key(current_user: Annotated[User, Depends(get_current_user)],
-                    db: Annotated[Session, Depends(get_db)]):
-    #TODO: also check for api keys' expiry.  
-    user_keys_count = db.query(APIKey).filter(APIKey.owner_id == current_user.id).count()
-    if user_keys_count >= 5:
-        raise HTTPException(
-            status_code=400,
-            detail="You have reached the number of active api keys",
-        )
-    
-    new_key = APIKey(key=generate_api_key(),
-                     owner_id=current_user.id,
-                     expiration_date=datetime.now() + timedelta(days=5))
-    db.add(new_key)
-    db.commit()
-    db.refresh(new_key)
-    return new_key
-
-@router.get("/my-api-keys", response_model=List[apikey_dm.APIKey])
-def get_current_user_api_keys(current_user: Annotated[User, Depends(get_current_user)],
-                    db: Annotated[Session, Depends(get_db)],
-                    active_only: bool = False):
-    result = db.query(APIKey).filter(APIKey.owner_id == current_user.id)
-    if active_only:
-        result = result.filter(APIKey.is_active == True)
-
-    return result.all()
