@@ -12,6 +12,7 @@ class MyTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.connection = engine.connect()
+        Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
         cls.setTestData() # cls.app must be set here.
         cls.db = Session(bind=cls.connection)
