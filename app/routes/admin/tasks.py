@@ -16,8 +16,8 @@ router = APIRouter(prefix="/admin", tags=["admin", "tasks"])
 @router.get("/tasks", response_model=List[task_dm.TaskInlineAdmin])
 async def get_tasks(
     user_id: int = None,
-    start_date: datetime = Query(None),
-    end_date: datetime = Query(None),
+    # start_date: datetime = Query(None),
+    # end_date: datetime = Query(None),
     skip: int = 0,
     limit: int = 10,
     db: Session = Depends(get_db),
@@ -28,11 +28,11 @@ async def get_tasks(
     if user_id is not None:
         query = query.filter(Task.user_id == user_id)
     
-    if start_date is not None:
-        query = query.filter(Task.created_at >= start_date)
+    # if start_date is not None:
+    #     query = query.filter(Task.created_at >= start_date)
     
-    if end_date is not None:
-        query = query.filter(Task.created_at <= end_date)
+    # if end_date is not None:
+    #     query = query.filter(Task.created_at <= end_date)
     
     tasks = query.offset(skip).limit(limit).all()
     return tasks
