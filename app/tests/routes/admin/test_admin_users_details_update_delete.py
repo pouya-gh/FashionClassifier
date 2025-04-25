@@ -33,12 +33,12 @@ class UsersAdminDetailsUpdateDeleteTests(MyTestCase):
                 email="mail2@mail.com",
                 hashed_password=hash_password("user2"))
         
-        in_active_user = User(username="user3",
+        inactive_user = User(username="user3",
                 email="mail3@mail.com",
                 hashed_password=hash_password("user3"),
                 is_active=False)
         
-        db.add_all([user, user2, in_active_user])
+        db.add_all([user, user2, inactive_user])
         db.commit()
         db.refresh(user)
         db.refresh(user2)
