@@ -15,7 +15,7 @@ app.include_router(router)
 
 client = TestClient(app)
 
-class ClassifierTests(MyTestCase):
+class APIKeysTests(MyTestCase):
     @classmethod
     def setTestData(cls):
         db = next(get_db())
