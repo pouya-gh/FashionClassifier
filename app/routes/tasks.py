@@ -9,7 +9,7 @@ from ..data_models import task as task_dm
 
 router = APIRouter()
 
-@router.get("/tasks", response_model=List[task_dm.TaskInline])
+@router.get("/my-tasks", response_model=List[task_dm.TaskInline])
 async def get_user_tasks(
     api_key_id: Optional[int] = Query(None, description="Filter by API key ID"),
     state: Optional[Task.StateEnum] = Query(None, description="Filter by task state"),
@@ -37,7 +37,7 @@ async def get_user_tasks(
 
     return tasks.all()
 
-@router.get("/tasks/{task_id}", response_model=task_dm.Task)
+@router.get("/my-tasks/{task_id}", response_model=task_dm.Task)
 async def get_task(
     task_id: int,
     current_user: User = Depends(get_current_user),

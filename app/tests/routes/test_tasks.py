@@ -65,53 +65,53 @@ class ClassifierTests(MyTestCase):
 
     def test_tasks_list_works(self):
         token = self.login_user(username="user1", password="user1")
-        response = client.get("/tasks",
+        response = client.get("/my-tasks",
                     headers={"Authorization": f"Bearer {token}"})
 
         self.assertEqual(response.status_code, 200)
 
     def test_tasks_list_doesnt_work_if_not_loggedin(self):
-        response = client.get("/tasks")
+        response = client.get("/my-tasks")
 
         self.assertEqual(response.status_code, 401)
 
     def test_tasks_list_only_loads_current_users_tasks(self):
         token = self.login_user(username="user1", password="user1")
-        response = client.get("/tasks",
+        response = client.get("/my-tasks",
                     headers={"Authorization": f"Bearer {token}"})
         
         self.assertEqual(len(response.json()), 2)
 
     def test_tasks_list_filters_work(self):
         token = self.login_user(username="user1", password="user1")
-        response = client.get("/tasks",
+        response = client.get("/my-tasks",
                               params={"api_key_id": 1},
                               headers={"Authorization": f"Bearer {token}"})
         
         self.assertEqual(len(response.json()), 1)
 
-        response = client.get("/tasks",
+        response = client.get("/my-tasks",
                               params={"state": "done"},
                               headers={"Authorization": f"Bearer {token}"})
         
         self.assertEqual(len(response.json()), 0)
 
 
-    def test_task_details_list_route_work(self):
+    def test_task_details_route_work(self):
         token = self.login_user(username="user1", password="user1")
-        response = client.get("/tasks/1",
+        response = client.get("/my-tasks/1",
                               headers={"Authorization": f"Bearer {token}"})
         
         self.assertEqual(response.status_code, 200)
 
-    def test_task_details_list_route_only_loads_current_users_tasks(self):
+    def test_task_details_route_only_loads_current_users_tasks(self):
         token = self.login_user(username="user1", password="user1")
-        response = client.get("/tasks/3",
+        response = client.get("/my-tasks/3",
                               headers={"Authorization": f"Bearer {token}"})
         
         self.assertEqual(response.status_code, 404)
 
-    def test_task_details_list_route_works_only_loggedin(self):
-        response = client.get("/tasks/1")
+    def test_task_details_route_works_only_loggedin(self):
+        response = client.get("/my-tasks/1")
         
         self.assertEqual(response.status_code, 401)
