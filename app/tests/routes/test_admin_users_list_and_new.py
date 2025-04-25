@@ -19,7 +19,7 @@ app.include_router(router)
 client = TestClient(app)
 
 
-class UsersAdminTests(MyTestCase):
+class UsersAdminListAndNewTests(MyTestCase):
     @classmethod
     def setTestData(cls):
         db = next(get_db())
