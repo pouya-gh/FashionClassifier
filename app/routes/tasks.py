@@ -17,7 +17,10 @@ async def get_user_tasks(
     db: Session = Depends(get_db)
 ):
     """
-    Get the list of tasks for the current user, optionally filtered by API key and state.
+    Get the list of tasks of the current user, optionally filtered by API key and state.
+
+    - **api_key_id**: The unique identifier for the APIKey. This is not the same as API key itself.
+    - **state**: State of the task. Is it processing or is it done?
     """
     # db_api_key = None
     # if api_key:
@@ -42,7 +45,11 @@ async def get_task(
     task_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
+    """
+    Retrieve a task by its ID.
 
+    - **task_id**: The unique identifier for the task.
+    """
     task = db.query(Task).filter(Task.user_id == current_user.id, Task.id == task_id).first()
     if not task:
         raise HTTPException(

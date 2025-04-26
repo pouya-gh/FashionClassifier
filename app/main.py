@@ -43,6 +43,10 @@ app.include_router(admin_apikeys.router)
 
 @app.get("/")
 async def root(request: Request):
+    """
+    An HTML welcome page.
+    TODO: make dashboard ui for users and admins
+    """
     return templates.TemplateResponse("index.html", {"request": request})
 
 if __name__ == "__main__":

@@ -18,6 +18,14 @@ async def get_apikeys(
     owner_id: int = None,
     db=Depends(get_db)
 ):
+    """
+    Gets the list of API keys. The result can be filtered with user ID and activeness and also supports pagination.
+
+    - **skip**: Skips the list of API keys by this amount. Used for pagination.
+    - **limit**: Limits the number of results by this amount.
+    - **owner_id**: If set to a value, only returns the API keys of the specified user.
+    - **is_active**: If set to a boolean value, the results will be filtered by key's activeness.
+    """
     query = db.query(APIKey)
     
     if is_active is not None:
@@ -36,6 +44,11 @@ async def create_apikey(
     apikey_data: apikey_dm.APIKeyCreate,
     db: Session = Depends(get_db)
 ):
+    """
+    Creates a new API key.
+
+    - **apikey_data**: Key data.
+    """
     apikey_data_dict = apikey_data.model_dump(exclude_none=True)
     apikey_data_dict["key"] = generate_api_key()
 
@@ -51,6 +64,11 @@ async def get_apikey(
     apikey_id: int, 
     db=Depends(get_db)
 ):
+    """
+    Get an API key's information.
+
+    - **apikey_id**: API keys's unique identifier.
+    """
     apikey = db.query(APIKey).filter(APIKey.id == apikey_id).first()
     if not apikey:
         raise HTTPException(status_code=404, detail="API key not found")
@@ -62,6 +80,12 @@ async def update_apikey(
     apikey_update: apikey_dm.APIKeyUpdate,
     db=Depends(get_db)
 ):
+    """
+    Updates a API key's informations.
+
+    - **apikey_id**: API key's unique identifier.
+    - **apikey_update**: API key data.
+    """
     update_data = apikey_update.model_dump(exclude_none=True)
     result = db.query(APIKey).filter(APIKey.id == apikey_id).update(update_data)
     db.commit()
@@ -75,6 +99,11 @@ async def delete_apikey(
     apikey_id: int,
     db=Depends(get_db)
 ):
+    """
+    Deletes an API key. This **does not** ask for confirmation. Use with caution.
+
+    - **apikey_id**: API key's unique identifier.
+    """
     apikey = db.query(APIKey).filter(APIKey.id == apikey_id).first()
     if not apikey:
         raise HTTPException(status_code=404, detail="API key not found")

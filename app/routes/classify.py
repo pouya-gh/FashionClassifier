@@ -89,13 +89,20 @@ async def classify(
     db: Session = Depends(get_db),
     api_key: APIKey = Security(get_api_key)
 ):
-    
+    """
+    Classify an image of clothing. The classes are limited to Fashion-MNIST classes.
+    Works best when the image is not worn by a person and is on a contrasting background.
+    For example, if the color of a shirt is black, the background must be a bright color, preferably white.
+
+    - **file**: The image file. Images must be less than 512 KB in size.
+    """
     if file.size > 512 * 1024:  # 512 KB
         raise HTTPException(
             status_code=413,
             detail="File size exceeds 512 KB limit"
         )
     
+    # for performance reasons only one running task is allowed.
     number_of_running_tasks = db.query(Task).filter(Task.state == Task.StateEnum.processing).count()
     if number_of_running_tasks > 0:
         raise HTTPException(503, "Task queue is full. Try another time.")

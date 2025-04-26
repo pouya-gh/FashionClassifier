@@ -17,6 +17,9 @@ router = APIRouter()
 @router.post("/api-keys/new", response_model=apikey_dm.APIKey)
 def get_new_api_key(current_user: Annotated[User, Depends(get_current_user)],
                     db: Annotated[Session, Depends(get_db)]):
+    """
+    Request a new API key. This is currently limited to only 5 keys per user for demonstration purposes.
+    """
     #TODO: also check for api keys' expiry.  
     user_keys_count = db.query(APIKey).filter(APIKey.owner_id == current_user.id).count()
     if user_keys_count >= 5:
@@ -38,6 +41,11 @@ def get_new_api_key(current_user: Annotated[User, Depends(get_current_user)],
 def get_current_user_api_keys(current_user: Annotated[User, Depends(get_current_user)],
                             db: Annotated[Session, Depends(get_db)],
                             active_only: bool = False):
+    """
+    Gets the list of API keys of the current user.
+
+    - **active_only**: if set to True, filters the results to active keys only.
+    """
     result = db.query(APIKey).filter(APIKey.owner_id == current_user.id)
     if active_only:
         result = result.filter(APIKey.is_active == True)
@@ -48,6 +56,11 @@ def get_current_user_api_keys(current_user: Annotated[User, Depends(get_current_
 def delete_api_key(key_id: int,
                    current_user: Annotated[User, Depends(get_current_user)],
                    db: Annotated[Session, Depends(get_db)]):
+    """
+    Deletes an API key. This **does not** ask for confirmation. Use with caution.
+
+    - **key_id**: API key's unique identifier.
+    """
     api_key = db.query(APIKey).filter(APIKey.id == key_id, APIKey.owner_id == current_user.id).first()
     if not api_key:
         raise HTTPException(

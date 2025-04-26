@@ -23,6 +23,13 @@ async def get_tasks(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    """
+    Gets the list of tasks. The result can be filtered with user ID and also supports pagination.
+
+    - **skip**: Skips the list of tasks by this amount. Used for pagination.
+    - **limit**: Limits the number of results by this amount.
+    - **user_id**: If set to a value, only returns the tasks of the specified user.
+    """
     query = db.query(Task)
     
     if user_id is not None:
@@ -43,6 +50,11 @@ async def get_task(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    """
+    Get a task's information.
+
+    - **task_id**: Task's unique identifier.
+    """
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(404, f"Task with id {task_id} not found")
@@ -53,6 +65,12 @@ async def get_task(
 async def update_task(task_id: int, task: task_dm.TaskUpdate,
                       current_admin: User = Depends(get_current_admin_user),
                       db: Session = Depends(get_db)):
+    """
+    Updates a taks' informations.
+
+    - **task_id**: Task's unique identifier.
+    - **task**: Task data.
+    """
     update_data = task.model_dump(exclude_none=True)
     result = db.query(Task).filter(Task.id == task_id).update(update_data)
     db.commit()
@@ -65,6 +83,11 @@ async def update_task(task_id: int, task: task_dm.TaskUpdate,
 async def delete_task(task_id: int,
                       current_admin: User = Depends(get_current_admin_user),
                       db: Session = Depends(get_db)):
+    """
+    Deletes a task. This **does not** ask for confirmation. Use with caution.
+
+    - **task_id**: Task's unique identifier.
+    """
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(404, f"Task with id {task_id} not found")
