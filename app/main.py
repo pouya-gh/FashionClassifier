@@ -23,7 +23,24 @@ templates = Jinja2Templates(directory="app/templates")
     # "http://localhost:8080",
 # ]
 
-app = FastAPI()
+description = """
+A simple REST api to use a MobilenetV2 model trained on Fashion-MNIST data.
+
+Simply Sign up, ask for a new API key and send your image to /classify.
+Don't worry about he admin operations. You won't be using them. 
+"""
+
+app = FastAPI(
+    title="Clothing Image Classifier",
+    description=description,
+    summary="A simple REST api to use a MobilenetV2 model",
+    version="0.0.1",
+    contact={
+        "name": "Pouya Gharibpour",
+        "url": "https://github.com/pouya-gh",
+        "email": "p.gharibpour@gmail.com",
+    }
+)
 # app.add_middleware(
 #     CORSMiddleware,
 #     allow_origins=origins,
