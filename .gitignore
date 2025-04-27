@@ -48,3 +48,4 @@ node_modules/
 
 sql_app.db
 sql_test.db
+app/.env
