@@ -3,7 +3,6 @@ from fastapi import (APIRouter,
                      HTTPException,
                      UploadFile,
                      File,
-                     status,
                      Security,
                      Depends,
                      Request)
@@ -14,6 +13,7 @@ from ..database.db import get_db
 from ..utils.auth import get_api_key
 
 from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
+from app.config import CLASSIFY_RATE_LIMIT, CLASSIFY_RATE_TIME_WINDOW
 
 import os
 from pathlib import Path
@@ -23,13 +23,13 @@ from time import time
 
 request_counts_by_ip = {}
 request_counts_by_api_key = {}
-RATE_LIMIT = 1 # Max 1 request
-TIME_WINDOW = 10  # Per 10 seconds
+# RATE_LIMIT = 1 # Max 1 request
+# TIME_WINDOW = 10  # Per 10 seconds
 
 
 async def ip_rate_limiter(request: Request):
-    if os.getenv("ENVIRONMENT", default="dev") == "test":
-        return
+    # if os.getenv("ENVIRONMENT", default="dev") == "test":
+    #     return
 
     client_ip = request.client.host
     current_time = time()
@@ -39,18 +39,18 @@ async def ip_rate_limiter(request: Request):
 
         # Remove outdated requests outside the time window
         request_counts_by_ip[client_ip] = [
-            timestamp for timestamp in request_times if current_time - timestamp < TIME_WINDOW
+            timestamp for timestamp in request_times if current_time - timestamp < CLASSIFY_RATE_TIME_WINDOW
         ]
 
-        if len(request_counts_by_ip[client_ip]) >= RATE_LIMIT:
+        if len(request_counts_by_ip[client_ip]) >= CLASSIFY_RATE_LIMIT:
             raise HTTPException(status_code=429, detail="Too Many Requests from your ip")
 
     # Add current request timestamp
     request_counts_by_ip.setdefault(client_ip, []).append(current_time)
 
 async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
-    if os.getenv("ENVIRONMENT", default="dev") == "test":
-        return
+    # if os.getenv("ENVIRONMENT", default="dev") == "test":
+    #     return
     
     client_api_key = api_key.key
     current_time = time()
@@ -60,10 +60,10 @@ async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
 
         # Remove outdated requests outside the time window
         request_counts_by_api_key[client_api_key] = [
-            timestamp for timestamp in request_times if current_time - timestamp < TIME_WINDOW
+            timestamp for timestamp in request_times if current_time - timestamp < CLASSIFY_RATE_TIME_WINDOW
         ]
 
-        if len(request_counts_by_api_key[client_api_key]) >= RATE_LIMIT:
+        if len(request_counts_by_api_key[client_api_key]) >= CLASSIFY_RATE_LIMIT:
             raise HTTPException(status_code=429, detail="Too Many Requests by your api key")
 
     # Add current request timestamp

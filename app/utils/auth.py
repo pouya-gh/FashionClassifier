@@ -11,12 +11,9 @@ from typing import Annotated
 
 from ..database.db import get_db
 from ..database.models import APIKey, User
-
-
-API_KEY_NAME = "X-API-Key"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 600
-SECRET_KEY = "TST"
+from app.config import (API_KEY_NAME,
+                        ALGORITHM,
+                        SECRET_KEY)
 
 class TokenData(BaseModel):
     username: str | None = None

@@ -2,12 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-import os
+from app.config import SQLALCHEMY_DATABASE_URL
 
-if os.getenv("ENVIRONMENT", default="dev") == "test":
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_test.db"
-else:
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
+# import os
+
+# if os.getenv("ENVIRONMENT", default="dev") == "test":
+#     SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_test.db"
+# else:
+#     SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
 
 # # Database configuration
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"

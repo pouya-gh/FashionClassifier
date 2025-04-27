@@ -2,12 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-
+from app.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from ..utils.auth import (hash_password,
                           authenticate_user,
                           create_access_token,
-                          get_current_active_user,
-                          ACCESS_TOKEN_EXPIRE_MINUTES)
+                          get_current_active_user)
 from ..database.db import get_db
 from ..database.models import User
 
