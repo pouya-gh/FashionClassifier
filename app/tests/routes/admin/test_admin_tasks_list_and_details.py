@@ -48,7 +48,7 @@ class UsersAdminListAndDetailsTests(MyTestCase):
         db.refresh(test_api_key_3)
 
         task1 = Task(api_key_id=test_api_key.id, filename="none", user_id=user.id)
-        task2 = Task(api_key_id=test_api_key_2.id, filename="none", user_id=user.id)
+        task2 = Task(api_key_id=test_api_key_2.id, filename="none", user_id=user.id, state=Task.StateEnum.done)
         task3 = Task(api_key_id=test_api_key_3.id, filename="none", user_id=user2.id)
         
         db.add_all([task1, task2, task3])
@@ -98,6 +98,13 @@ class UsersAdminListAndDetailsTests(MyTestCase):
         
         self.assertEqual(response.status_code, 200, response.json())
         self.assertEqual(len(response.json()), 1)
+
+        response = client.get("/admin/tasks",
+                    params={"task_state": "processing"},
+                    headers=headers)
+        
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(len(response.json()), 2)
 
 
     def test_tasks_list_route_pagination_works(self):
