@@ -1,7 +1,12 @@
 from unittest import TestCase
 from sqlalchemy.orm import Session
 
-from app.database.db import Base, engine, get_db
+from app.database.db import get_db, Base
+from app.utils.testing.database import engine
+from app.routes.classify import ip_rate_limiter, api_key_rate_limiter
+
+async def empty_rate_limiter():
+    return
 
 class MyTestCase(TestCase):
     @classmethod
@@ -17,6 +22,8 @@ class MyTestCase(TestCase):
         cls.setTestData() # cls.app must be set here.
         cls.db = Session(bind=cls.connection)
         cls.app.dependency_overrides[get_db] = lambda: cls.db
+        cls.app.dependency_overrides[ip_rate_limiter] = empty_rate_limiter
+        cls.app.dependency_overrides[api_key_rate_limiter] = empty_rate_limiter
     
     @classmethod
     def tearDownClass(cls):

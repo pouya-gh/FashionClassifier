@@ -6,7 +6,7 @@ from fastapi import FastAPI, Response
 
 from app.utils.auth import API_KEY_NAME, hash_password
 from app.utils.testing.testcase import MyTestCase
-from app.database.db import get_db
+from app.utils.testing.database import get_test_db
 
 from datetime import datetime, timedelta
 
@@ -21,7 +21,7 @@ client = TestClient(app)
 class ClassifierTests(MyTestCase):
     @classmethod
     def setTestData(cls):
-        db = next(get_db())
+        db = next(get_test_db())
     
         user = User(username="user1",
                 email="mail@mail.com",

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from app.utils.auth import hash_password, authenticate_user, create_access_token
 from app.utils.testing.testcase import MyTestCase
-from app.database.db import get_db
+from app.utils.testing.database import get_test_db
 
 from datetime import datetime, timedelta
 
@@ -18,7 +18,7 @@ client = TestClient(app)
 class APIKeysTests(MyTestCase):
     @classmethod
     def setTestData(cls):
-        db = next(get_db())
+        db = next(get_test_db())
     
         user = User(username="user1",
                 email="mail@mail.com",

@@ -1,12 +1,11 @@
 from fastapi.testclient import TestClient
 from app.routes.tasks import router
 from app.database.models import Task, APIKey, User
-from sqlalchemy.orm import Session
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 
-from app.utils.auth import API_KEY_NAME, hash_password, authenticate_user, create_access_token
+from app.utils.auth import hash_password, authenticate_user, create_access_token
 from app.utils.testing.testcase import MyTestCase
-from app.database.db import get_db
+from app.utils.testing.database import get_test_db
 
 from datetime import datetime, timedelta
 
@@ -21,7 +20,7 @@ client = TestClient(app)
 class TasksTests(MyTestCase):
     @classmethod
     def setTestData(cls):
-        db = next(get_db())
+        db = next(get_test_db())
     
         user = User(username="user1",
                 email="mail@mail.com",
