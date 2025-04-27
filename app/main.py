@@ -1,13 +1,8 @@
 from fastapi import FastAPI, Request
-from fastapi.security import APIKeyHeader
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 
-from .database.db import get_db, Base, engine
-from .database.models import APIKey
-
-from .utils.auth import get_api_key, get_current_user
+from .database.db import Base, engine
 
 from .routes import classify, auth, tasks, apikeys
 from .routes.admin import (tasks as admin_tasks,
