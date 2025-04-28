@@ -17,6 +17,15 @@ FAHION_MNIST_CLASS_NAMES = [
 
 
 def classify_image(image_path: str) -> int:
+    """
+    Tries classifying an image using a pytorch model.
+    Works best when there is clear contrast between the image and its background.
+
+    - **image_path**: Path to the image.
+
+    Returns:
+    int: An index of the FAHION_MNIST_CLASS_NAMES. Use the list for getting the name of class prediction.
+    """
     img = Image.open(image_path).convert("RGB")
 
     transform = transforms.Compose([

@@ -28,9 +28,12 @@ request_counts_by_api_key = {}
 
 
 async def ip_rate_limiter(request: Request):
-    # if os.getenv("ENVIRONMENT", default="dev") == "test":
-    #     return
-
+    """
+    A simple memory based rate limiter which limits the requests per minute per IP address.
+    This is meant to be used as dependency not as a middleware since not all path operations 
+    need to be rate limited.
+    """
+    
     client_ip = request.client.host
     current_time = time()
 
@@ -49,8 +52,11 @@ async def ip_rate_limiter(request: Request):
     request_counts_by_ip.setdefault(client_ip, []).append(current_time)
 
 async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
-    # if os.getenv("ENVIRONMENT", default="dev") == "test":
-    #     return
+    """
+    A simple memory based rate limiter which limits the requests per minute per api key.
+    This is meant to be used as dependency not as a middleware since not all path operations 
+    need to be rate limited.
+    """
     
     client_api_key = api_key.key
     current_time = time()
@@ -74,6 +80,12 @@ router = APIRouter()
 
 
 def start_task(task: Task, db: Session):
+    """
+    starts the background task of classifying images.
+
+    - **task**: The Task instance creating when the request was received.
+    - **db**: A database session for updating the instance.
+    """
     print(f"Processing file in the background: {task.filename}")
     result = classify_image(task.filename)
     task_db = db.query(Task).filter(Task.id==task.id)
