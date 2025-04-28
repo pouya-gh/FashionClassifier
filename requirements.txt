@@ -3,11 +3,12 @@ uvicorn==0.34.0
 SQLAlchemy==2.0.40
 torch==2.6.0
 torchvision==0.21.0
-pytest==8.3.5
+httpx==0.28.1
 PyJWT==2.8.0
 bcrypt==4.1.2
 Jinja2==3.1.6
 aiofiles==24.1.0
 alembic==1.15.2
+psycopg2-binary==2.9.10
 python-dotenv==1.1.0
 python-multipart==0.0.20
