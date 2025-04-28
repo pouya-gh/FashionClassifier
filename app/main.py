@@ -9,7 +9,7 @@ from .routes.admin import (tasks as admin_tasks,
                            users as admin_users,
                            apikeys as admin_apikeys)
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 templates = Jinja2Templates(directory="app/templates")
 
