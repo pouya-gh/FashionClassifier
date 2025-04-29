@@ -13,10 +13,9 @@ from ..database.db import get_db
 from ..utils.auth import get_api_key
 
 from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
-from app.config import CLASSIFY_RATE_LIMIT, CLASSIFY_RATE_TIME_WINDOW
+from app.config import CLASSIFY_RATE_LIMIT, CLASSIFY_RATE_TIME_WINDOW, TEMP_FILES_DIR
 
 import os
-from pathlib import Path
 import uuid
 from time import time
 
@@ -94,6 +93,14 @@ def start_task(task: Task, db: Session):
     print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
     os.remove(task.filename)
 
+
+def _prepare_file(file_path, file):
+    os.makedirs(file_path, exist_ok=True)
+    
+    file_path /= str(uuid.uuid1())
+    with open(file_path, "wb") as f:
+        f.write(file.read())
+
 @router.post("/classify", dependencies=[Depends(ip_rate_limiter), Depends(api_key_rate_limiter)])
 async def classify(
     background_tasks: BackgroundTasks,
@@ -119,13 +126,9 @@ async def classify(
     if number_of_running_tasks > 0:
         raise HTTPException(503, "Task queue is full. Try another time.")
     
-    file_path = Path("temp_files") / api_key.owner.username
+    file_path = TEMP_FILES_DIR / api_key.owner.username
 
-    os.makedirs(file_path, exist_ok=True)
-    
-    file_path /= str(uuid.uuid1())
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
+    _prepare_file(file_path, file.file)
 
     task_instance = Task(user_id=api_key.owner.id, api_key_id=api_key.id, filename=str(file_path))
     db.add(task_instance)

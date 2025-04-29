@@ -5,7 +5,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PYTORCH_MODEL_PATH = Path(__file__).resolve().parent / "utils" / "data" / "mobilenet.pth"
+APP_PATH = Path(__file__).resolve().parent
+
+PYTORCH_MODEL_PATH = APP_PATH / "utils" / "data" / "mobilenet.pth"
+
+TEMP_FILES_DIR = APP_PATH.parent / "temp_files"
 
 API_KEY_NAME = "X-API-Key"
 ALGORITHM = os.getenv("AUTH_ALGORITHM")
