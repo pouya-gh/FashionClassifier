@@ -15,6 +15,8 @@ from ..utils.auth import get_api_key
 from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
 from app.config import CLASSIFY_RATE_LIMIT, CLASSIFY_RATE_TIME_WINDOW, TEMP_FILES_DIR
 
+from app.tasks import classify_task
+
 import os
 import uuid
 from time import time
@@ -78,28 +80,30 @@ async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
 router = APIRouter()
 
 
-def start_task(task: Task, db: Session):
-    """
-    starts the background task of classifying images.
+# def start_task(task: Task, db: Session):
+#     """
+#     starts the background task of classifying images.
 
-    - **task**: The Task instance creating when the request was received.
-    - **db**: A database session for updating the instance.
-    """
-    print(f"Processing file in the background: {task.filename}")
-    result = classify_image(task.filename)
-    task_db = db.query(Task).filter(Task.id==task.id)
-    task_db.update({"result": result, "state": Task.StateEnum.done})
-    db.commit()
-    print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
-    os.remove(task.filename)
+#     - **task**: The Task instance creating when the request was received.
+#     - **db**: A database session for updating the instance.
+#     """
+#     print(f"Processing file in the background: {task.filename}")
+#     result = classify_image(task.filename)
+#     task_db = db.query(Task).filter(Task.id==task.id)
+#     task_db.update({"result": result, "state": Task.StateEnum.done})
+#     db.commit()
+#     print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
+#     os.remove(task.filename)
 
 
-def _prepare_file(file_path, file):
-    os.makedirs(file_path, exist_ok=True)
+def _prepare_file(dir_path, file):
+    os.makedirs(dir_path, exist_ok=True)
     
-    file_path /= str(uuid.uuid1())
+    file_path = dir_path / str(uuid.uuid1())
     with open(file_path, "wb") as f:
         f.write(file.read())
+
+    return file_path
 
 @router.post("/classify", dependencies=[Depends(ip_rate_limiter), Depends(api_key_rate_limiter)])
 async def classify(
@@ -126,13 +130,14 @@ async def classify(
     if number_of_running_tasks > 0:
         raise HTTPException(503, "Task queue is full. Try another time.")
     
-    file_path = TEMP_FILES_DIR / api_key.owner.username
+    dir_path = TEMP_FILES_DIR / api_key.owner.username
 
-    _prepare_file(file_path, file.file)
+    file_path = _prepare_file(dir_path, file.file)
 
     task_instance = Task(user_id=api_key.owner.id, api_key_id=api_key.id, filename=str(file_path))
     db.add(task_instance)
     db.commit()
     db.refresh(task_instance)
-    background_tasks.add_task(start_task, task_instance, db)
+    # background_tasks.add_task(start_task, task_instance, db)
+    classify_task.delay(task_instance.id)
     return {"message": f"Request queued with id {task_instance.id}! Check your tasks for the result."}

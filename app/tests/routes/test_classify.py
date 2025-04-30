@@ -36,8 +36,8 @@ class ClassifierTests(MyTestCase):
         cls.app = app
 
     @patch('app.routes.classify._prepare_file')
-    @patch('app.routes.classify.start_task') 
-    def test_classify_works_with_valid_data(self, start_task, _prepare_file):
+    @patch('app.routes.classify.classify_task')
+    def test_classify_works_with_valid_data(self, classify_task, _prepare_file):
         with open("app/tst.png", "rb") as f:
             response: Response = client.post("/classify",
                             files={"file": ("test_image.png", f.read())},
@@ -49,8 +49,8 @@ class ClassifierTests(MyTestCase):
         self.assertEqual(tasks_count, 1)
 
     @patch('app.routes.classify._prepare_file')
-    @patch('app.routes.classify.start_task') 
-    def test_classify_fails_without_valid_api_key(self, start_task, _prepare_file):
+    @patch('app.routes.classify.classify_task')
+    def test_classify_fails_without_valid_api_key(self, classify_task, _prepare_file):
         with open("app/tst.png", "rb") as f:
             response: Response = client.post("/classify",
                             files={"file": ("test_image.png", f.read())},
