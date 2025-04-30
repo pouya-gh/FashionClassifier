@@ -2,12 +2,21 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-from .database.db import Base, engine
+from .database.db import get_db
+from .database import models
 
 from .routes import classify, auth, tasks, apikeys
 from .routes.admin import (tasks as admin_tasks,
                            users as admin_users,
                            apikeys as admin_apikeys)
+
+from .utils.auth import hash_password
+
+from .config import (SUPER_USER_EMAIL,
+                     SUPER_USER_PASSWORD,
+                     SUPER_USER_USERNAME)
+
+from contextlib import asynccontextmanager
 
 # Base.metadata.create_all(bind=engine)
 
@@ -25,7 +34,27 @@ Simply Sign up, ask for a new API key and send your image to /classify.
 Don't worry about he admin operations. You won't be using them. 
 """
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if not (SUPER_USER_PASSWORD and SUPER_USER_PASSWORD and SUPER_USER_EMAIL):
+        yield
+    else:
+        db = next(get_db())
+        try:
+            admin_count = db.query(models.User).filter(models.User.role == "admin").count()
+            if admin_count == 0:
+                admin_user = models.User(username=SUPER_USER_USERNAME,
+                                hashed_password=hash_password(SUPER_USER_PASSWORD),
+                                email=SUPER_USER_EMAIL,
+                                role=models.User.RoleEnum.admin)
+                db.add(admin_user)
+                db.commit()
+        finally:
+            pass
+        yield
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Clothing Image Classifier",
     description=description,
     summary="A simple REST api to use a MobilenetV2 model",
