@@ -12,8 +12,12 @@ from ..database.models import APIKey, Task
 from ..database.db import get_db
 from ..utils.auth import get_api_key
 
-from ..utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
-from app.config import CLASSIFY_RATE_LIMIT, CLASSIFY_RATE_TIME_WINDOW, TEMP_FILES_DIR
+from app.config import (CLASSIFY_RATE_LIMIT,
+                        CLASSIFY_RATE_TIME_WINDOW,
+                        TEMP_FILES_DIR,
+                        REDIS_DB,
+                        REDIS_HOST,
+                        REDIS_PORT)
 
 from app.tasks import classify_task
 
@@ -21,9 +25,11 @@ import os
 import uuid
 from time import time
 
+import redis
 
-request_counts_by_ip = {}
-request_counts_by_api_key = {}
+redis_connection = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+# request_counts_by_ip = {}
+# request_counts_by_api_key = {}
 # RATE_LIMIT = 1 # Max 1 request
 # TIME_WINDOW = 10  # Per 10 seconds
 
@@ -35,22 +41,25 @@ async def ip_rate_limiter(request: Request):
     need to be rate limited.
     """
     
-    client_ip = request.client.host
+    redis_key = "iplimiter:" + request.client.host
     current_time = time()
 
-    if client_ip in request_counts_by_ip:
-        request_times = request_counts_by_ip[client_ip]
-
-        # Remove outdated requests outside the time window
-        request_counts_by_ip[client_ip] = [
-            timestamp for timestamp in request_times if current_time - timestamp < CLASSIFY_RATE_TIME_WINDOW
+    if bool(redis_connection.exists(redis_key)):
+        prev_req_times = redis_connection.lrange(redis_key, 0, -1)
+       
+        sorted_reqs = [
+            timestamp for timestamp in prev_req_times if current_time - float(timestamp) < CLASSIFY_RATE_TIME_WINDOW
         ]
 
-        if len(request_counts_by_ip[client_ip]) >= CLASSIFY_RATE_LIMIT:
+        if len(sorted_reqs) >= CLASSIFY_RATE_LIMIT:
             raise HTTPException(status_code=429, detail="Too Many Requests from your ip")
+        
+        # remove older request time stamps
+        for _ in range(len(prev_req_times) - len(sorted_reqs)):
+            redis_connection.rpop(redis_key)
 
     # Add current request timestamp
-    request_counts_by_ip.setdefault(client_ip, []).append(current_time)
+    redis_connection.lpush(redis_key, current_time)
 
 async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
     """
@@ -58,42 +67,30 @@ async def api_key_rate_limiter(api_key: APIKey = Security(get_api_key)):
     This is meant to be used as dependency not as a middleware since not all path operations 
     need to be rate limited.
     """
-    
-    client_api_key = api_key.key
+
+    redis_key = "apikeylimiter:" + str(api_key.id)
     current_time = time()
 
-    if client_api_key in request_counts_by_api_key:
-        request_times = request_counts_by_api_key[client_api_key]
-
-        # Remove outdated requests outside the time window
-        request_counts_by_api_key[client_api_key] = [
-            timestamp for timestamp in request_times if current_time - timestamp < CLASSIFY_RATE_TIME_WINDOW
+    if bool(redis_connection.exists(redis_key)):
+        prev_req_times = redis_connection.lrange(redis_key, 0, -1)
+       
+        sorted_reqs = [
+            timestamp for timestamp in prev_req_times if current_time - float(timestamp) < CLASSIFY_RATE_TIME_WINDOW
         ]
 
-        if len(request_counts_by_api_key[client_api_key]) >= CLASSIFY_RATE_LIMIT:
-            raise HTTPException(status_code=429, detail="Too Many Requests by your api key")
+        if len(sorted_reqs) >= CLASSIFY_RATE_LIMIT:
+            raise HTTPException(status_code=429, detail="Too Many Requests from your ip")
+        
+        # remove older request time stamps
+        for _ in range(len(prev_req_times) - len(sorted_reqs)):
+            redis_connection.rpop(redis_key)
 
     # Add current request timestamp
-    request_counts_by_api_key.setdefault(client_api_key, []).append(current_time)
+    redis_connection.lpush(redis_key, current_time)
 
 
 router = APIRouter()
 
-
-# def start_task(task: Task, db: Session):
-#     """
-#     starts the background task of classifying images.
-
-#     - **task**: The Task instance creating when the request was received.
-#     - **db**: A database session for updating the instance.
-#     """
-#     print(f"Processing file in the background: {task.filename}")
-#     result = classify_image(task.filename)
-#     task_db = db.query(Task).filter(Task.id==task.id)
-#     task_db.update({"result": result, "state": Task.StateEnum.done})
-#     db.commit()
-#     print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
-#     os.remove(task.filename)
 
 
 def _prepare_file(dir_path, file):

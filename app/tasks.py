@@ -4,9 +4,11 @@ from celery import Celery
 
 from app.utils.classifier import classify_image, FAHION_MNIST_CLASS_NAMES
 
+from app.config import CELERY_BACKEND, CELERY_BROKER
+
 import os
 
-app = Celery('tasks', broker='redis://localhost', backend='redis://localhost')
+app = Celery('tasks', broker=CELERY_BROKER, backend=CELERY_BACKEND)
 
 
 @app.task
