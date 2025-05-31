@@ -1,22 +1,29 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
+import redis.asyncio as redis
 
 from .database.db import get_db
 from .database import models
 
-from .routes import classify, auth, tasks, apikeys
+from .routes import classify, auth, tasks, apikeys, notifications
 from .routes.admin import (tasks as admin_tasks,
                            users as admin_users,
                            apikeys as admin_apikeys)
 
-from .utils.auth import hash_password
+from .utils.auth import hash_password, get_current_user
+
 
 from .config import (SUPER_USER_EMAIL,
                      SUPER_USER_PASSWORD,
-                     SUPER_USER_USERNAME)
+                     SUPER_USER_USERNAME,
+                     REDIS_DB,
+                     REDIS_HOST,
+                     REDIS_PORT)
 
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 # Base.metadata.create_all(bind=engine)
 
@@ -36,6 +43,8 @@ Don't worry about he admin operations. You won't be using them.
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.redis_pool = redis.ConnectionPool.from_url(f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+
     if not (SUPER_USER_PASSWORD and SUPER_USER_PASSWORD and SUPER_USER_EMAIL):
         yield
     else:
@@ -50,8 +59,10 @@ async def lifespan(app: FastAPI):
                 db.add(admin_user)
                 db.commit()
         finally:
-            pass
-        yield
+            yield
+        
+
+    await app.state.redis_pool.aclose()
 
 app = FastAPI(
     lifespan=lifespan,
@@ -78,6 +89,7 @@ app.include_router(classify.router)
 app.include_router(auth.router)
 app.include_router(tasks.router)
 app.include_router(apikeys.router)
+app.include_router(notifications.router)
 app.include_router(admin_tasks.router)
 app.include_router(admin_users.router)
 app.include_router(admin_apikeys.router)
