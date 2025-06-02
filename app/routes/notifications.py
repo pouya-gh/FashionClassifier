@@ -14,23 +14,44 @@ from ..utils.auth import get_current_user
 
 router = APIRouter()
 
+# a dictionarry of connected users queues
+connected_clients_queues = dict()
+# a lock for the list of connected clients queues to prevent race conditions
+clients_list_lock = asyncio.Lock()
+
 async def status_event_generator(request: Request, user: User):
     message_queue = f"taskmessages:{user.id}"
-    redis_connection = redis.Redis(connection_pool=request.app.state.redis_pool)
+
+    # create a new queue for this user and add it to the dictionary
+    # with the way this is implementated, if a user have different connection
+    # to this endpoint, they will receive messages on all their connections
+    queue = asyncio.Queue()
+    async with clients_list_lock:
+        connected_clients_queues[message_queue] = queue
+
+    # subscribe to this particular user's messages channel
+    await request.app.state.redis_noti_pubsub.subscribe(message_queue)
+
     try:
         while True:       
             if await request.is_disconnected():
                 print('client disconnected')
                 break
-            message = await redis_connection.brpop(message_queue)
-            # print(f"[hihihi] {message} received")
-            yield json.loads(message[1])
+
+            message = await queue.get()
+            queue.task_done() # inform this queue that the message has been processed
+            yield json.loads(message)
     except asyncio.CancelledError as e:
         print(f"disconnected from client {request.client}")
     except json.JSONDecodeError:
         print(f"Invalid message json format")
     finally:
-        await redis_connection.close()
+        # cleanups
+
+        await request.app.state.redis_noti_pubsub.unsubscribe(message_queue)
+
+        async with clients_list_lock:
+            del connected_clients_queues[message_queue]
 
 
 @router.get('/notifications')

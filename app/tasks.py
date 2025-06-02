@@ -43,6 +43,8 @@ def classify_task(task_id: int):
         "retry": 3000,
         "data": f"Task {task.id} finished. Result: {FAHION_MNIST_CLASS_NAMES[result]}({result})",
     }
-    redis_connection.lpush(message_queue, json.dumps(message))
+    # inform the notification service
+    redis_connection.publish(message_queue, json.dumps(message))
+
     print(f"Classification arg: {result}, ({FAHION_MNIST_CLASS_NAMES[result]})")
     os.remove(task.filename)
