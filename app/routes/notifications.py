@@ -2,8 +2,6 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
-import redis.asyncio as redis 
-
 from typing import Annotated
 import asyncio
 import json
@@ -29,9 +27,6 @@ async def status_event_generator(request: Request, user: User):
     async with clients_list_lock:
         connected_clients_queues[message_queue] = queue
 
-    # subscribe to this particular user's messages channel
-    await request.app.state.redis_noti_pubsub.subscribe(message_queue)
-
     try:
         while True:       
             if await request.is_disconnected():
@@ -40,16 +35,12 @@ async def status_event_generator(request: Request, user: User):
 
             message = await queue.get()
             queue.task_done() # inform this queue that the message has been processed
-            yield json.loads(message)
+            yield message
     except asyncio.CancelledError as e:
         print(f"disconnected from client {request.client}")
     except json.JSONDecodeError:
         print(f"Invalid message json format")
     finally:
-        # cleanups
-
-        await request.app.state.redis_noti_pubsub.unsubscribe(message_queue)
-
         async with clients_list_lock:
             del connected_clients_queues[message_queue]
 

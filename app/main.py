@@ -2,8 +2,6 @@ from fastapi import FastAPI, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
-import redis.asyncio as redis
-
 from .database.db import get_db
 from .database import models
 
@@ -12,23 +10,15 @@ from .routes.admin import (tasks as admin_tasks,
                            users as admin_users,
                            apikeys as admin_apikeys)
 
-from .utils.auth import hash_password, get_current_user
+from .utils.auth import hash_password
 
 
 from .config import (SUPER_USER_EMAIL,
                      SUPER_USER_PASSWORD,
-                     SUPER_USER_USERNAME,
-                     REDIS_DB,
-                     REDIS_HOST,
-                     REDIS_PORT,
-                     SYSTEM_MESSAGE_QUEUE)
-
-from .routes.notifications import connected_clients_queues, clients_list_lock
+                     SUPER_USER_USERNAME)
 
 from contextlib import asynccontextmanager
-import asyncio
 
-# Base.metadata.create_all(bind=engine)
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -44,32 +34,8 @@ Simply Sign up, ask for a new API key and send your image to /classify.
 Don't worry about he admin operations. You won't be using them. 
 """
 
-async def notifications_reader(channel: redis.client.PubSub):
-    while True:
-        message = await channel.get_message(ignore_subscribe_messages=True)
-        if message is not None:
-            message_channel = message['channel'].decode()
-            data = message['data'].decode()
-            print(f"(Reader) Message Received: {message}")
-            if message_channel == SYSTEM_MESSAGE_QUEUE: # inform all connected users of system messages.
-                for client_queue in connected_clients_queues.values():
-                    client_queue.put_nowait(data)
-            else:
-                async with clients_list_lock:
-                    try:
-                        connected_clients_queues[message_channel].put_nowait(data)
-                    except KeyError as e:
-                        print(f"(Reader) Error Sending Message to Client: {e}")
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # create redis connections for notifications
-    app.state.redis_pool = redis.ConnectionPool.from_url(f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
-    app.state.redis_noti_conn = redis.Redis(connection_pool=app.state.redis_pool)
-    app.state.redis_noti_pubsub = app.state.redis_noti_conn.pubsub()
-    await app.state.redis_noti_pubsub.subscribe(SYSTEM_MESSAGE_QUEUE)
-
-    app.state.notifications_reader_task = asyncio.create_task(notifications_reader(app.state.redis_noti_pubsub))
 
     if not (SUPER_USER_PASSWORD and SUPER_USER_PASSWORD and SUPER_USER_EMAIL):
         yield
@@ -87,11 +53,6 @@ async def lifespan(app: FastAPI):
         finally:
             yield
     
-    # notifications task and connections cleanup
-    app.state.notifications_reader_task.cancel()
-    await app.state.redis_noti_pubsub.close()
-    await app.state.redis_noti_conn.close()
-    await app.state.redis_pool.aclose()
 
 app = FastAPI(
     lifespan=lifespan,
