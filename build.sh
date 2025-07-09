@@ -3,4 +3,4 @@ set -o errexit
 
 pip install -r requirements.txt
 
-alembic init alembic
+alembic upgrade head
